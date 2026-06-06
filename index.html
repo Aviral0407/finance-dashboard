@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jarvis Finance Dashboard</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+    <!-- NAVBAR -->
+    <div class="navbar">
+        <h1>⚡ Aviral Finance Dashboard</h1>
+        <div class="nav-right">
+            <span id="current-month"></span>
+            <button class="theme-btn" onclick="toggleTheme()">🌙</button>
+            <button class="export-btn" onclick="exportPDF()">📤 Export PDF</button>
+        </div>
+    </div>
+
+    <div class="container">
+
+        <!-- SUMMARY CARDS -->
+        <div class="cards">
+            <div class="card"><h3>Total Income</h3><div class="amount blue" id="inc">₹0</div></div>
+            <div class="card"><h3>Total Expense</h3><div class="amount red" id="exp">₹0</div></div>
+            <div class="card"><h3>Remaining</h3><div class="amount green" id="rem">₹0</div></div>
+            <div class="card"><h3>Savings </h3><div class="amount yellow" id="sav">₹0</div></div>
+        </div>
+
+        <!-- TOP GRID -->
+        <div class="top-grid">
+
+            <!-- SET INCOME -->
+            <div class="box">
+                <h2>💰 Monthly Income</h2>
+                <div class="row">
+                    <input type="number" id="income-input" placeholder="Enter income (₹)" />
+                    <input type="number" id="savings-input" placeholder="Savings amount (₹)" />  
+                    <button onclick="setIncome()">Set</button>
+                </div>
+                <p id="income-display" class="sub-text"></p>
+            </div>
+
+            <!-- ADD CATEGORY -->
+            <div class="box">
+                <h2>🗂️ Add Category</h2>
+                <div class="row">
+                    <input type="text" id="cat-name" placeholder="e.g. Rent, Food, Netflix" />
+                    <input type="number" id="cat-budget" placeholder="Budget (₹)" />
+                    <button onclick="addCategory()">+ Add</button>
+                </div>
+            </div>
+
+            <!-- ADD TRANSACTION -->
+            <div class="box">
+                <h2>📝 Add Transaction</h2>
+                <div class="row">
+                    <input type="text" id="t-desc" placeholder="Description (optional)" />
+                    <input type="number" id="t-amount" placeholder="Amount (₹)" />
+                    <select id="t-cat"><option value="">Select Category</option></select>
+                    <button onclick="addTransaction()">+ Add</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- CHARTS -->
+      <div class="chart-grid">
+    <div class="box">
+        <h2>📊 Budget vs Spent</h2>
+        <canvas id="barChart" height="120"></canvas>
+    </div>
+</div>
+            
+        </div>
+        <!-- CATEGORY BLOCKS -->
+        <div class="cat-blocks" id="cat-blocks"></div>
+
+        <!-- CURRENT MONTH TRANSACTIONS -->
+          <div class="box" style="margin-bottom:24px">
+              <h2>📋 Current Month Transactions</h2>
+              <div id="current-history"></div>
+          </div>
+
+        <!-- MONTHLY HISTORY -->
+        <div class="box">
+            <h2>🗓️ Monthly History</h2>
+            <div id="history"></div>
+        </div>
+
+    </div>
+
+    <script src="js/calculator.js"></script>
+</body>
+</html>
