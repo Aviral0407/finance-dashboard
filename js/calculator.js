@@ -9,6 +9,7 @@ let viewingMonth = currentMonth;
 let barChartInstance = null;
 let monthsList = [];
 
+
 document.getElementById('current-month').textContent = '📅 ' + currentMonth;
 
 async function init() {
@@ -226,6 +227,101 @@ function render() {
 
     renderChart(colors);
     renderCurrentMonthHistory();
+    renderInsights();
+    renderHealthScore();
+    updateGoal();
+}
+
+function setGoal() {
+    const goal = parseFloat(document.getElementById('goal-input').value);
+    if (!goal) return alert('Enter goal amount!');
+    localStorage.setItem('savingsGoal', goal);
+    document.getElementById('goal-input').value = '';
+    updateGoal();
+}
+
+function updateGoal() {
+    const goal = parseFloat(localStorage.getItem('savingsGoal')) || 0;
+    const income = monthData.income || 0;
+    const savingsPercent = monthData.savingsPercent || 0;
+    const savings = income * (savingsPercent / 100);
+    
+    const display = document.getElementById('goal-display');
+    const bar = document.getElementById('goal-bar');
+    if (!display || !bar) return;
+    
+    if (!goal) {
+        display.textContent = 'No goal set';
+        bar.style.width = '0%';
+        return;
+    }
+    
+    const percent = Math.min((savings / goal) * 100, 100).toFixed(0);
+    display.textContent = `₹${savings.toLocaleString()} / ₹${goal.toLocaleString()} (${percent}%)`;
+    bar.style.width = percent + '%';
+    bar.style.background = percent >= 100 ? '#00ff88' : percent >= 50 ? '#ffaa00' : '#ff4444';
+}
+
+function renderInsights() {
+    const container = document.getElementById('insights');
+    if (!container) return;
+
+    const income = monthData.income || 0;
+    const savingsPercent = monthData.savingsPercent || 0;
+    const savings = income * (savingsPercent / 100);
+    const totalExpense = allCategories.reduce((sum, cat) => {
+        return sum + (allTransactions[cat.id] || []).reduce((s, t) => s + t.amount, 0);
+    }, 0);
+    const remaining = income - savings - totalExpense;
+
+    // Top spending category
+    let topCat = { name: 'None', spent: 0 };
+    allCategories.forEach(cat => {
+        const spent = (allTransactions[cat.id] || []).reduce((a, b) => a + b.amount, 0);
+        if (spent > topCat.spent) topCat = { name: cat.name, spent };
+    });
+
+    // Daily average
+    const today = new Date();
+    const daysGone = today.getDate();
+    const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+    const daysLeft = daysInMonth - daysGone;
+    const dailyAvg = daysGone > 0 ? Math.round(totalExpense / daysGone) : 0;
+
+    // Budget health score
+    const spendPercent = income > 0 ? (totalExpense / (income - savings)) * 100 : 0;
+    let score, scoreColor, scoreEmoji;
+    if (spendPercent <= 50) { score = 'Excellent'; scoreColor = '#00ff88'; scoreEmoji = '🟢'; }
+    else if (spendPercent <= 75) { score = 'Good'; scoreColor = '#ffaa00'; scoreEmoji = '🟡'; }
+    else if (spendPercent <= 90) { score = 'Warning'; scoreColor = '#ff8800'; scoreEmoji = '🟠'; }
+    else { score = 'Critical'; scoreColor = '#ff4444'; scoreEmoji = '🔴'; }
+
+    container.innerHTML = `
+        <div class="insight-item">
+            <span class="insight-label">🏆 Top Spending</span>
+            <span class="insight-value" style="color:#ff4444">${topCat.name} — ₹${topCat.spent.toLocaleString()}</span>
+        </div>
+        <div class="insight-item">
+            <span class="insight-label">📅 Daily Average</span>
+            <span class="insight-value" style="color:#4488ff">₹${dailyAvg.toLocaleString()}/day</span>
+        </div>
+        <div class="insight-item">
+            <span class="insight-label">⏳ Days Left</span>
+            <span class="insight-value" style="color:#ffaa00">${daysLeft} days</span>
+        </div>
+        <div class="insight-item">
+            <span class="insight-label">💰 Remaining</span>
+            <span class="insight-value" style="${remaining >= 0 ? 'color:#00ff88' : 'color:#ff4444'}">₹${remaining.toLocaleString()}</span>
+        </div>
+        <div class="insight-item">
+            <span class="insight-label">📊 Budget Health</span>
+            <span class="insight-value" style="color:${scoreColor}">${scoreEmoji} ${score}</span>
+        </div>
+        <div class="insight-item">
+            <span class="insight-label">🔮 Month End Prediction</span>
+            <span class="insight-value" style="color:#aa44ff">₹${(dailyAvg * daysInMonth).toLocaleString()} total</span>
+        </div>
+    `;
 }
 
 function renderChart(colors) {
@@ -252,6 +348,66 @@ function renderChart(colors) {
             }
         }
     });
+}
+
+function renderHealthScore() {
+    const container = document.getElementById('health-score');
+    if (!container) return;
+
+    const income = monthData.income || 0;
+    const savingsPercent = monthData.savingsPercent || 0;
+    const savings = income * (savingsPercent / 100);
+    const totalExpense = allCategories.reduce((sum, cat) => {
+        return sum + (allTransactions[cat.id] || []).reduce((s, t) => s + t.amount, 0);
+    }, 0);
+
+    if (income === 0) {
+        container.innerHTML = '<p class="empty-msg">Set income to see health score</p>';
+        return;
+    }
+
+    // Score calculation
+    let score = 100;
+    const expenseRatio = totalExpense / (income - savings);
+    if (expenseRatio > 1) score -= 40;
+    else if (expenseRatio > 0.9) score -= 30;
+    else if (expenseRatio > 0.75) score -= 20;
+    else if (expenseRatio > 0.5) score -= 10;
+
+    const savingsRatio = savings / income;
+    if (savingsRatio >= 0.3) score += 0;
+    else if (savingsRatio >= 0.2) score -= 5;
+    else if (savingsRatio >= 0.1) score -= 10;
+    else score -= 20;
+
+    score = Math.max(0, Math.min(100, score));
+
+    let color, label, msg;
+    if (score >= 80) { color = '#00ff88'; label = 'Excellent 🌟'; msg = 'Great job! Keep it up!'; }
+    else if (score >= 60) { color = '#ffaa00'; label = 'Good 👍'; msg = 'On track, minor improvements needed.'; }
+    else if (score >= 40) { color = '#ff8800'; label = 'Fair ⚠️'; msg = 'Watch your spending habits.'; }
+    else { color = '#ff4444'; label = 'Poor 🔴'; msg = 'Overspending detected! Take action.'; }
+
+    container.innerHTML = `
+        <div style="text-align:center; margin-bottom:16px">
+            <div style="font-size:48px; font-weight:bold; color:${color}">${score}</div>
+            <div style="font-size:16px; color:${color}; margin-top:4px">${label}</div>
+            <div style="color:#888; font-size:13px; margin-top:6px">${msg}</div>
+        </div>
+        <div style="background:#1a1a1a; border-radius:20px; height:12px; overflow:hidden; margin-bottom:16px">
+            <div style="width:${score}%; height:100%; background:${color}; border-radius:20px; transition:width 0.5s ease"></div>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px">
+            <div style="background:#1a1a1a; padding:12px; border-radius:8px; text-align:center">
+                <div style="color:#888; font-size:12px">Expense Ratio</div>
+                <div style="font-weight:bold; color:${expenseRatio > 1 ? '#ff4444' : '#00ff88'}">${(expenseRatio * 100).toFixed(0)}%</div>
+            </div>
+            <div style="background:#1a1a1a; padding:12px; border-radius:8px; text-align:center">
+                <div style="color:#888; font-size:12px">Savings Ratio</div>
+                <div style="font-weight:bold; color:${savingsRatio >= 0.2 ? '#00ff88' : '#ffaa00'}">${(savingsRatio * 100).toFixed(0)}%</div>
+            </div>
+        </div>
+    `;
 }
 
 function renderCurrentMonthHistory() {

@@ -38,8 +38,7 @@ body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-
 
 .top-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 24px; }
 
-.chart-grid { display: grid; grid-template-columns: 1fr; gap: 16px; margin-bottom: 24px; max-width: 600px; }
-
+.chart-grid { display: grid; grid-template-columns: 1fr; gap: 16px; margin-bottom: 24px; }
 .box { background: var(--card); border-radius: 12px; padding: 20px; border: 1px solid var(--border); }
 .box h2 { color: #00ff88; margin-bottom: 14px; font-size: 15px; }
 
@@ -96,3 +95,8 @@ body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-
 .history-table td { padding: 10px 14px; border-bottom: 1px solid var(--border); }
 .history-table tr:hover td { background: var(--input); }
 .history-table tr:last-child td { border-bottom: none; }
+
+.insight-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.insight-item:last-child { border-bottom: none; }
+.insight-label { color: var(--sub); font-size: 13px; }
+.insight-value { font-weight: bold; font-size: 14px; }
