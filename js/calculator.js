@@ -112,6 +112,35 @@ async function editCategory(id) {
     await loadMonth(currentMonth);
 }
 
+async function downloadCSV(monthName) {
+    const dash = await fetch(`${API}/dashboard/${monthName}`).then(r => r.json());
+    
+    let csv = 'S.No,Date,Description,Category,Amount\n';
+    let sno = 1;
+    
+    dash.categories.forEach(cat => {
+        cat.transactions.forEach(t => {
+            const date = new Date(t.createdAt).toLocaleDateString();
+            const desc = t.description || 'Transaction';
+            csv += `${sno++},${date},"${desc}","${cat.name}",${t.amount}\n`;
+        });
+    });
+
+    csv += `\nSummary\n`;
+    csv += `Income,₹${dash.income}\n`;
+    csv += `Total Expense,₹${dash.totalExpense}\n`;
+    csv += `Savings,₹${dash.savings}\n`;
+    csv += `Remaining,₹${dash.remaining}\n`;
+
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${monthName}-expenses.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
 async function addTransaction() {
     const amount = parseFloat(document.getElementById('t-amount').value);
     const catId = parseInt(document.getElementById('t-cat').value);
